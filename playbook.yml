@@ -1,0 +1,32 @@
+- name: Setup Grafana
+  hosts: all
+  gather_facts: no
+  roles:
+      - name: docker
+        role: roles/docker
+        tags: docker
+
+      - name: traefik
+        role: roles/traefik
+        tags: traefik
+
+      - name: grafana
+        role: roles/grafana
+        tags:
+            - grafana
+
+      - name: node_exporter
+        role: roles/node_exporter
+        tags:
+            - nodeexporter
+
+      - name: prometheus
+        role: roles/prometheus
+        tags:
+            - prometheus
+            - prometheus.force-restart
+
+      - name: cadvisor
+        role: roles/cadvisor
+        tags:
+            - cadvisor

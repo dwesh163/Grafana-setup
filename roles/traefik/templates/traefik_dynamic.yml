@@ -1,0 +1,20 @@
+http:
+  routers:
+    traefik:
+      rule: "Host(`traefik.{{ frontend.domain }}`)"
+      service: "api@internal"
+      entryPoints: ["websecure"]
+      tls: { certResolver: letsencrypt }
+      middlewares: ["traefik_auth"]
+
+    metrics:
+      rule: "Host(`traefik.{{ frontend.domain }}`) && PathPrefix(`/metrics`)"
+      service: "prometheus@internal"
+      entryPoints: ["websecure"]
+      tls: { certResolver: letsencrypt }
+
+  middlewares:
+    traefik_auth:
+      basicAuth:
+        users:
+          - "{{ traefik_htpass }}"

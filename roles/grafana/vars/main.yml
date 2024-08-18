@@ -1,0 +1,18 @@
+---
+# vars for Grafana
+grafana_port: 3000
+grafana_container_name: 'grafana'
+grafana_image: 'grafana/grafana'
+grafana_version: '11.1.4'
+grafana_image_qualified: '{{ grafana_image }}:{{ grafana_version }}'
+
+grafana:
+    security:
+        admin_password: '{{ _secrets.grafana.security.admin_password }}'
+    github:
+        client_id: '{{ _secrets.grafana.github.client_id }}'
+        client_secret: '{{ _secrets.grafana.github.client_secret }}'
+    plugins:
+        - grafana-piechart-panel
+        - grafana-clock-panel
+        - grafana-polystat-panel

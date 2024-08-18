@@ -1,0 +1,65 @@
+- include_vars: ../../vars/main.yml
+
+- name: Create directories
+  file:
+      path: '{{ item }}'
+      state: directory
+      mode: '755'
+  tags:
+      - traefik
+  with_items:
+      - '{{ traefik_state_path }}/dynamic'
+      - '{{ data_path }}/traefik/acme/'
+
+- name: Copy traefik static config
+  template:
+      src: 'traefik.yml'
+      dest: '{{ traefik_state_path }}/traefik.yml'
+  tags:
+      - traefik
+      - traefik.config
+      - traefik.config.static
+  register: _traefik_config
+
+- name: Copy traefik dynamic config
+  template:
+      src: '{{ item }}'
+      dest: '{{ traefik_state_path }}/dynamic/{{ item }}'
+  tags:
+      - traefik
+      - traefik.config
+      - traefik.config.dynamic
+  with_items:
+      - traefik_dynamic.yml
+
+- name: Create traefik network
+  docker_network:
+      name: '{{ backend_network_name }}'
+      state: present
+  tags:
+      - traefik
+
+- name: Run traefik
+  docker_container:
+      name: '{{ traefik_container_name }}'
+      image: '{{ traefik_image }}:{{ traefik_version }}'
+      detach: yes
+      restart: '{{ _traefik_config is changed }}'
+      restart_policy: unless-stopped
+      ports:
+          - '80:80'
+          - '443:443'
+      networks:
+          - name: '{{ backend_network_name }}'
+      network_mode: '{{ backend_network_name }}'
+      volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+          - '{{ traefik_state_path }}/traefik.yml:/etc/traefik/traefik.yml'
+          - '{{ traefik_state_path }}/dynamic:/etc/traefik/dynamic'
+          - '{{ data_path }}/traefik/acme:/acme'
+      log_driver: json-file
+      log_options:
+          max-size: 50m
+          max-file: '3'
+  tags:
+      - traefik

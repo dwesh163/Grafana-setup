@@ -1,0 +1,49 @@
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: true
+
+log:
+  level: DEBUG
+
+metrics:
+  prometheus: {}
+
+providers:
+  file:
+    filename: "/etc/traefik/dynamic/traefik_dynamic.yml"
+    watch: true
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: "traefik_network"
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "ehouarn.duriaux@protonmail.com"
+      storage: "/acme/acme.json"
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      httpChallenge:
+        entryPoint: "web"
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+        domains:
+          - { "kooked.ch" }

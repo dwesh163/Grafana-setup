@@ -1,0 +1,10 @@
+---
+# vars file for idevfsd-traefik
+traefik_state_path: '{{ install_path }}/traefik'
+traefik_container_name: traefik
+traefik_image: traefik
+traefik_version: 3.1.2
+
+traefik_web_ui_port: 9199
+
+traefik_debug: true

@@ -1,0 +1,88 @@
+- include_vars: ../../vars/main.yml
+
+- name: Create various destination directories for monitoring files
+  file:
+      path: '{{ data_path }}/grafana/{{ item }}'
+      state: directory
+  with_items:
+      - conf
+
+- name: debug mail server
+  debug:
+      msg: '{{ _secrets.mail}}'
+
+- name: Create writable directories
+  file:
+      path: '{{ data_path }}/grafana/{{ item }}'
+      state: directory
+      mode: 'u=rwx,g=rwx,o=rwx'
+  with_items:
+      - logs
+      - data
+      - dashboards
+      - data/plugins
+      - provisioning/dashboards
+      - provisioning/datasources
+
+- name: Grafana provisionned dashboards
+  copy:
+      src: 'dashboards/{{ item }}'
+      dest: '{{ data_path }}/grafana/dashboards/{{ item }}'
+  loop:
+      - cadvisor.json
+      - docker.json
+      - main.json
+      - node-exporter.json
+      - prometheus.json
+  register: grafana_templates
+
+# -------------------------------------------------------------------- Templates
+- name: Grafana template config
+  template:
+      src: '{{ item }}'
+      dest: '{{ data_path }}/grafana/{{ item }}'
+  with_items:
+      - conf/grafana.ini
+      - provisioning/datasources/all.yml
+      - provisioning/dashboards/all.yml
+  register: grafana_config_files
+
+# -------------------------------------------------------------------- Container
+- name: 'Pull Grafana {{ grafana_image_qualified }}'
+  community.docker.docker_image:
+      name: '{{ grafana_image_qualified }}'
+      source: pull
+
+- name: Run Grafana
+  docker_container:
+      name: '{{ grafana_container_name }}'
+      image: '{{ grafana_image_qualified }}'
+      detach: yes
+      restart_policy: unless-stopped
+      recreate: >-
+          {{
+            (grafana_config_files is defined and grafana_config_files is changed)
+            or
+            (grafana_templates is defined and grafana_templates is changed)
+          }}
+      network_mode: default
+      networks:
+          - name: '{{ backend_network_name }}'
+          - name: '{{ monitoring_network_name }}'
+      volumes:
+          - '{{ data_path }}/grafana/data:/var/lib/grafana'
+          - '{{ data_path }}/grafana/conf/grafana.ini:/etc/grafana/grafana.ini'
+          - '{{ data_path }}/grafana/provisioning:/etc/grafana/provisioning'
+          - '{{ data_path }}/grafana/dashboards:/var/lib/grafana/dashboards'
+      env:
+          GF_INSTALL_PLUGINS: "{{ grafana.plugins | join(',') }}"
+      log_driver: json-file
+      log_options:
+          max-size: 50m
+          max-file: '3'
+      labels:
+          traefik.enable: 'true'
+          traefik.http.routers.grafana.rule: 'Host(`grafana.{{ frontend.domain }}`)'
+          traefik.http.routers.grafana.entrypoints: 'websecure'
+          traefik.http.routers.grafana.tls.certresolver: 'letsencrypt'
+          traefik.docker.network: '{{ backend_network_name }}'

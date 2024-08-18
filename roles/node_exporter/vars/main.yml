@@ -1,0 +1,5 @@
+---
+nodeexporter_container_name: node-exporter
+nodeexporter_image: prom/node-exporter
+nodeexporter_version: latest
+nodeexporter_port: 9100

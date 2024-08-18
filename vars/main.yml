@@ -1,0 +1,12 @@
+_secrets: "{{ lookup('pipe', 'keybase fs read /keybase/team/kookedch/monitoring/ansible_secrets.yml') | from_yaml }}"
+install_path: "/srv/monitoring"
+data_path: "/srv/monitoring/data"
+
+backend_network_name: "traefik_network"
+monitoring_network_name: "monitoring_network"
+
+frontend:
+  domain: "kooked.ch"
+  protocol: "https"
+
+traefik_htpass: "{% set comma = joiner(', ') %}{% for cred in _secrets.frontend.credentials %}{{ comma() }}{{ cred.user }}:{{ cred.pass | password_hash('bcrypt', _secrets.frontend.salt) }}{% endfor %}"
