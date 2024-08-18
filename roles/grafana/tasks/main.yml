@@ -7,10 +7,6 @@
   with_items:
       - conf
 
-- name: debug mail server
-  debug:
-      msg: '{{ _secrets.mail}}'
-
 - name: Create writable directories
   file:
       path: '{{ data_path }}/grafana/{{ item }}'
