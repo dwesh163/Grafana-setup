@@ -23729,7 +23729,9 @@
   "revision": 1,
   "schemaVersion": 39,
   "tags": [
-    "linux"
+    "linux",
+    "node-exporter",
+    "prometheus"
   ],
   "templating": {
     "list": [
@@ -23867,6 +23869,6 @@
   "timezone": "browser",
   "title": "Node Exporter Full",
   "uid": "rYdddlPWa",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
