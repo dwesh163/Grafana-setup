@@ -1,0 +1,20 @@
+- include_vars: ../../vars/main.yml
+
+- name: Create path for blackbox exporter
+  file:
+      path: '{{ data_path }}/blackbox'
+      state: directory
+
+- name: Blackbox template config
+  template:
+      src: 'blackbox.yml'
+      dest: '{{ data_path }}/blackbox/blackbox.yml'
+
+- name: Create Blackbox Exporter Container
+  ansible.builtin.docker_container:
+      name: blackbox-exporter
+      image: prom/blackbox-exporter:latest
+      restart_policy: always
+      network_mode: '{{ monitoring_network_name }}'
+      volumes:
+          - '{{ data_path }}/blackbox/blackbox.yml:/config/blackbox.yml'
