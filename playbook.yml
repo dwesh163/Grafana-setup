@@ -30,3 +30,8 @@
         role: roles/cadvisor
         tags:
             - cadvisor
+
+      - name: blackbox
+        role: roles/blackbox
+        tags:
+            - blackbox
