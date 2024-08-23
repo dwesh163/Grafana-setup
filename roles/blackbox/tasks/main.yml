@@ -9,12 +9,16 @@
   template:
       src: 'blackbox.yml'
       dest: '{{ data_path }}/blackbox/blackbox.yml'
+  register: _blackbox_config
 
 - name: Create Blackbox Exporter Container
   ansible.builtin.docker_container:
       name: blackbox-exporter
       image: prom/blackbox-exporter:latest
+      restart: '{{ _blackbox_config is changed }}'
       restart_policy: always
       network_mode: '{{ monitoring_network_name }}'
+      command: >
+          --config.file=/config/blackbox.yml
       volumes:
           - '{{ data_path }}/blackbox/blackbox.yml:/config/blackbox.yml'
