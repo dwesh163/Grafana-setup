@@ -1,0 +1,56 @@
+groups:
+  - name: Monitoring
+    rules:
+      - alert: Instance down
+        expr: up{job!="blackbox-http", job!="traefik"} == 0
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute."
+
+      - alert: Blackbox HTTP probe failed
+        expr: probe_success{job="blackbox-http"} == 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Website {{ $labels.instance }} is down"
+          description: "HTTP probe failed for {{ $labels.instance }} of job {{ $labels.job }}."
+
+      - alert: File system is almost full
+        expr: node_filesystem_free_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100 < 10
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} has less than 10% free"
+          description: "{{ $labels.instance }} has less than 10% free space on disk."
+
+      - alert: High CPU usage
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} has high CPU usage"
+          description: "{{ $labels.instance }} has high CPU usage."
+
+      - alert: High memory usage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Buffers_bytes - node_memory_Cached_bytes) / node_memory_MemTotal_bytes * 100 > 90
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} has high memory usage"
+          description: "{{ $labels.instance }} has high memory usage."
+
+      - alert: Traefik backend server down
+        expr: up{job="traefik"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Traefik service down"
+          description: "Traefik server has been down for more than 30 seconds."
