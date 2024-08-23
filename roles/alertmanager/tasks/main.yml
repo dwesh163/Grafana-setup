@@ -1,0 +1,48 @@
+- include_vars: ../../vars/main.yml
+
+- name: alertmanager configuration directory
+  file:
+      path: '{{ alertmanager_state_path }}/config'
+      state: directory
+
+- name: debug
+  debug:
+      msg: '{{ _secrets.alertmanager }}'
+
+- name: alertmanager configuration
+  template:
+      src: config.yml
+      dest: '{{ alertmanager_state_path }}/config/config.yml'
+  register: _alertmanager_static_config
+
+- name: Run alertmanager
+  docker_container:
+      name: '{{ alertmanager_container_name }}'
+      image: '{{ alertmanager_image }}:{{ alertmanager_version }}'
+      restart: '{{ _alertmanager_static_config is changed }}'
+      detach: yes
+      restart_policy: unless-stopped
+      command:
+          - '--config.file=/config/config.yml'
+          - '--web.external-url=https://am.{{ frontend.domain }}'
+      network_mode: default
+      networks:
+          - name: '{{ backend_network_name }}'
+          - name: '{{ monitoring_network_name }}'
+      container_default_behavior: 'compatibility'
+      volumes:
+          - '{{ alertmanager_state_path }}/config:/config'
+      log_driver: json-file
+      log_options:
+          max-size: 50m
+          max-file: '3'
+      labels:
+          traefik.enable: 'true'
+          traefik.http.routers.alertmanager.rule: 'Host(`am.{{ frontend.domain }}`)'
+          traefik.http.routers.alertmanager.entrypoints: 'websecure'
+          traefik.http.routers.alertmanager.tls.certresolver: 'letsencrypt'
+          traefik.http.services.alertmanager.loadbalancer.server.port: '9093'
+          traefik.docker.network: '{{ backend_network_name }}'
+          traefik.http.routers.alertmanager.middlewares: 'alertmanager_auth'
+          traefik.http.middlewares.alertmanager_auth.basicauth.users: '{{ traefik_htpass }}'
+          traefik.http.middlewares.alertmanager_auth.basicauth.removeheader: 'true'

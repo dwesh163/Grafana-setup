@@ -35,3 +35,8 @@
         role: roles/blackbox
         tags:
             - blackbox
+
+      - name: alertmanager
+        role: roles/alertmanager
+        tags:
+            - alertmanager
